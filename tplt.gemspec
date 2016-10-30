@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
 	s.name        = 'tplt'
-	s.version     = '0.0.1'
+	s.version     = '0.0.3'
 	s.date        = '2016-10-30'
 	s.summary     = "Template-based file generator"
 	s.description = "Generate boilerplate code from templates. In development"

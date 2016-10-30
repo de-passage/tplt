@@ -37,7 +37,7 @@ class Tmplt < Thor
 			files << f unless f =~ /\A\./
 		end
 
-		bins = Dir.entries("bin").select { |d| d !~ /\A\./ } if FileTest::exist? "bin"
+		bins = Dir.entries("bin").select { |d| d !~ /\A\./ }.map{|e| "'bin/#{e}'"}.join(", ")  if FileTest::exist? "bin"
 
 		File.open(gname, "w") do |f|
 			f << <<~EOS
@@ -50,12 +50,12 @@ class Tmplt < Thor
 		s.authors     = ["Sylvain Leclercq"]
 		s.email       = 'maisbiensurqueoui@gmail.com'
 		s.files       = #{files.inspect}
-		s.executables.concat #{bins.inspect}
 		s.homepage    =
 			'http://www.github.com/de-passage/#{name}'
 		s.license       = '#{options[:licence]}'
-	end
 			EOS
+			f << "\ts.executables <<\n\t\t" + bins + "\n" if bins
+			f << "end"
 		end
 	end
 end
