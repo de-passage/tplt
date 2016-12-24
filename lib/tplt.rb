@@ -1,4 +1,6 @@
 require "thor"
+require "erb"
+
 
 def recursive_each arr = ["."], path = "", &blck
 	arr.each do |b|
@@ -11,12 +13,35 @@ def recursive_each arr = ["."], path = "", &blck
 	end
 end
 
+module Config
+	def self.load cfg
+		unless(File.exist? cfg)
+			puts "warning: no configuration file found" 
+			return Hash.new { "Not configured" }
+		end
+		File.open(cfg) do |f| 
+			f.map do |l| 
+				m = l.match(/\s*(\w+):\s*(.+)/)
+				m ? [m[1].to_sym, m[2]] : m
+			end.compact.to_h.tap { |h| h.default = "Not configured" }
+		end
+	end
+end
+
 class Tmplt < Thor
+
+	TEMPLATE_FOLDER = File.join(Gem.loaded_specs["tplt"].full_gem_path, "templates")
+	CONFIG_FILE = File.join(Dir.home, ".tplt_rc") 
+	
+	CONFIG = Config.load(CONFIG_FILE)
+
 	desc "gemspec", "create a default gemspec file"
 	option :'no-description', aliases: "-d", type: :boolean, default: false
 	option :name, default: File.basename(Dir.getwd)
 	option :licence, default: "MIT"
 	def gemspec()
+		template_path = File.join(TEMPLATE_FOLDER, "gemspec.rb.erb")
+		template = File.open(template_path) do |f| f.read end
 		name = options['name'] 
 		gname = "#{name}.gemspec"
 		raise "File already exists" if FileTest::exist? gname
@@ -39,23 +64,12 @@ class Tmplt < Thor
 
 		bins = Dir.entries("bin").select { |d| d !~ /\A\./ }.map{|e| "'bin/#{e}'"}.join(", ")  if FileTest::exist? "bin"
 
+		context = Struct.new(:name, :version, :files, :summ, :desc, :options, :bins, :author, :email).new(name, "0.0.0", files, summ, desc, options, bins, CONFIG[:author], CONFIG[:email])
+		context = context.instance_eval do binding end
+
 		File.open(gname, "w") do |f|
-			f << <<~EOS
-	Gem::Specification.new do |s|
-		s.name        = '#{name}'
-		s.version     = '0.0.0'
-		s.date        = '#{Time.now.to_s.scan(/\A\S*/)[0]}'
-		s.summary     = "#{summ}"
-		s.description = "#{desc}"
-		s.authors     = ["Sylvain Leclercq"]
-		s.email       = 'maisbiensurqueoui@gmail.com'
-		s.files       = #{files.inspect}
-		s.homepage    =
-			'http://www.github.com/de-passage/#{name}'
-		s.license       = '#{options[:licence]}'
-			EOS
-			f << "\ts.executables <<\n\t\t" + bins + "\n" if bins
-			f << "end"
+			f << ERB.new(template).result(context)
 		end
+
 	end
 end

@@ -1,0 +1,14 @@
+Gem::Specification.new do |s|
+	s.name        = '<%= name %>'
+	s.version     = '<%= version %>'
+	s.date        = '<%= Time.now.to_s.scan(/\A\S*/)[0] %>'
+	s.summary     = "<%= summ %>"
+	s.description = "<%= desc %>"
+	s.authors     = ["<%= author %>"]
+	s.email       = '<%= email %>'
+	s.files       = <%= files.inspect %>
+	s.homepage    =
+		'http://www.github.com/de-passage/<%= name %>'
+	s.license       = '<%= options[:licence] %>'
+	<%= "s.executables << " + bins if bins%>
+end
